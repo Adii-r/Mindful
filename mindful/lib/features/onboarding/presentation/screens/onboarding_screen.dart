@@ -39,7 +39,7 @@ class _OnboardingScreenState
       return CategoryModel(
         id: entry.key,
         name: entry.value['name'],
-        iconUrl: entry.value['iconUrl'],
+        icon: entry.value['icon'],
       );
     }).toList();
 
@@ -141,7 +141,7 @@ class _OnboardingScreenState
                       runSpacing: 12,
                       children: categories.map((category) {
                         return InterestChip(
-                          title: "${category.iconUrl} ${category.name}",
+                          title: "${category.icon} ${category.name}",
                           isSelected: selectedInterests.contains(category.id),
                           onTap: () => toggleInterest(category.id),
                         );

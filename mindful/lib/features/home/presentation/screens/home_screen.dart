@@ -4,9 +4,240 @@ import '../../../../core/theme/app_theme.dart';
 import '../widgets/book_card.dart';
 import '../widgets/mood_selector.dart';
 import '../widgets/quote_card.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String username = "User";
+  int streak = 0;
+  Map<String, dynamic>? selectedQuote;
+  List<Map<String, dynamic>> quotes = [];
+  List<Map<String, dynamic>> authors = [];
+  List<Map<String, dynamic>> books = [];
+  Map<String, dynamic>? selectedAuthor;
+  bool isLoading = true;
+  String selectedMood = "";
+  List<Map<String, dynamic>> recommendedAuthors = [];
+  List<Map<String, dynamic>> recommendedBooks = [];
+
+  Future<void> loadRecommendedBooks() async {
+    final categories = await loadUserCategories();
+
+    final snapshot = await FirebaseDatabase.instance.ref().child("books").get();
+
+    if (!snapshot.exists) return;
+
+    final data = Map<dynamic, dynamic>.from(snapshot.value as Map);
+
+    List<Map<String, dynamic>> tempBooks = [];
+
+    for (final entry in data.entries) {
+      final book = Map<String, dynamic>.from(entry.value);
+
+      if (categories.contains(book["categoryId"])) {
+        final authorSnapshot = await FirebaseDatabase.instance
+            .ref()
+            .child("authors")
+            .child(book["authorId"])
+            .get();
+
+        String authorName = "";
+
+        if (authorSnapshot.exists) {
+          final author =
+          Map<String,dynamic>.from(
+              authorSnapshot.value as Map<dynamic,dynamic>
+          );
+
+          authorName = author["name"] ?? "";
+        }
+
+        tempBooks.add({"id": entry.key, ...book, "authorName": authorName});
+      }
+    }
+
+    setState(() {
+      recommendedBooks = tempBooks;
+    });
+  }
+
+  Future<List<String>> loadUserCategories() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final snapshot = await FirebaseDatabase.instance
+        .ref()
+        .child("user_preferences")
+        .child(uid)
+        .get();
+
+    if (!snapshot.exists) {
+      return [];
+    }
+
+    final data = Map<String, dynamic>.from(snapshot.value as Map);
+
+    return List<String>.from(data["categoryIds"]);
+  }
+
+  Future<void> loadRecommendedAuthors() async {
+    final categories = await loadUserCategories();
+
+    final snapshot = await FirebaseDatabase.instance
+        .ref()
+        .child("authors")
+        .get();
+
+    if (!snapshot.exists) return;
+
+    final data = Map<dynamic, dynamic>.from(snapshot.value as Map);
+
+    final filteredAuthors = data.entries
+        .where((entry) {
+          final author = Map<String, dynamic>.from(entry.value);
+
+          return categories.contains(author["categoryId"]);
+        })
+        .map((entry) {
+          return {"id": entry.key, ...Map<String, dynamic>.from(entry.value)};
+        })
+        .toList();
+
+    setState(() {
+      recommendedAuthors = filteredAuthors;
+    });
+  }
+
+  Future<void> loadHomeData() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    print("CURRENT UID: $uid");
+
+    final db = FirebaseDatabase.instance.ref();
+
+    final userSnapshot = await db.child("users").child(uid).get();
+
+    if (userSnapshot.exists) {
+      final data = Map<String, dynamic>.from(userSnapshot.value as Map);
+
+      username = data["displayName"] ?? "User";
+    }
+
+    final streakSnapshot = await db.child("streaks").child(uid).get();
+
+    if (streakSnapshot.exists) {
+      final data = Map<String, dynamic>.from(streakSnapshot.value as Map);
+
+      streak = data["currentStreak"] ?? 0;
+    }
+
+    final quoteSnapshot = await db.child("quotes").get();
+
+    if (quoteSnapshot.exists) {
+      final data = Map<dynamic, dynamic>.from(quoteSnapshot.value as Map);
+
+      quotes = data.entries.map((e) {
+        return {"id": e.key, ...Map<String, dynamic>.from(e.value)};
+      }).toList();
+    }
+
+    final authorSnapshot = await db.child("authors").get();
+    if (authorSnapshot.exists) {
+      final data = Map<dynamic, dynamic>.from(authorSnapshot.value as Map);
+      authors = data.entries.map((e) {
+        return {"id": e.key, ...Map<String, dynamic>.from(e.value)};
+      }).toList();
+    }
+
+    final bookSnapshot = await db.child("books").get();
+    if (bookSnapshot.exists) {
+      final data = Map<dynamic, dynamic>.from(bookSnapshot.value as Map);
+      books = data.entries.map((e) {
+        return {"id": e.key, ...Map<String, dynamic>.from(e.value)};
+      }).toList();
+    }
+    await loadRecommendedAuthors();
+    await loadRecommendedBooks();
+    setState(() {
+      isLoading = false;
+    });
+  }
+
+  Future<void> saveMood(String mood) async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final ref = FirebaseDatabase.instance
+        .ref()
+        .child("mood_logs")
+        .child(uid)
+        .push();
+
+    await ref.set({
+      "mood": mood,
+
+      "loggedAt": DateTime.now().millisecondsSinceEpoch,
+    });
+
+    setState(() {
+      selectedMood = mood;
+    });
+
+    loadMoodQuote(mood);
+  }
+
+  Future<void> loadMoodQuote(String mood) async {
+    final snapshot = await FirebaseDatabase.instance
+        .ref()
+        .child("quotes")
+        .get();
+
+    if (!snapshot.exists) return;
+
+    final data = Map<dynamic, dynamic>.from(snapshot.value as Map);
+
+    for (final item in data.entries) {
+      final quote = Map<String, dynamic>.from(item.value);
+
+      if (quote["moodTag"].toString().toLowerCase() == mood) {
+        setState(() {
+          selectedQuote = quote;
+        });
+
+        await loadQuoteAuthor(
+          quote["authorId"],
+        );
+
+        break;
+      }
+    }
+  }
+
+  Future<void> loadQuoteAuthor(String authorId) async {
+    final snapshot = await FirebaseDatabase.instance
+        .ref()
+        .child("authors")
+        .child(authorId)
+        .get();
+
+    if (!snapshot.exists) return;
+
+    final data = Map<String, dynamic>.from(snapshot.value as Map);
+
+    setState(() {
+      selectedAuthor = data;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadHomeData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,25 +246,18 @@ class HomeScreen extends StatelessWidget {
 
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 20,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
 
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-
                   Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
 
                     children: [
-
                       Text(
                         "Good Evening,",
                         style: AppTheme.bodyLarge.copyWith(
@@ -44,15 +268,13 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: 4),
 
                       Text(
-                        "Aditya",
+                        username,
                         style: AppTheme.headlineLarge.copyWith(
                           color: Colors.white,
                         ),
                       ),
-
                     ],
                   ),
-
 
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -67,7 +289,6 @@ class HomeScreen extends StatelessWidget {
 
                     child: Row(
                       children: [
-
                         const Icon(
                           Icons.local_fire_department,
                           color: Colors.orange,
@@ -76,33 +297,27 @@ class HomeScreen extends StatelessWidget {
                         const SizedBox(width: 6),
 
                         Text(
-                          "7",
+                          streak.toString(),
                           style: AppTheme.titleMedium.copyWith(
                             color: Colors.white,
                           ),
                         ),
-
                       ],
                     ),
                   ),
-
                 ],
               ),
 
               const SizedBox(height: 32),
-              const MoodSelector(),
+              MoodSelector(onMoodSelected: saveMood),
               const SizedBox(height: 32),
-              const QuoteCard(),
-              const SizedBox(height:32),
-              const AuthorsSection(),
-              const SizedBox(height:32),
-              const BooksSection(),
-
+              QuoteCard(quote: selectedQuote, author: selectedAuthor),
+              const SizedBox(height: 32),
+              AuthorsSection(authors: recommendedAuthors),
+              const SizedBox(height: 32),
+              BookSection(books: recommendedBooks),
             ],
-
           ),
-
-
         ),
       ),
     );

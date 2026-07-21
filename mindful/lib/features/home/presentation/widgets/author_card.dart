@@ -1,46 +1,22 @@
 import 'package:flutter/material.dart';
-
 import '../../../../core/theme/app_theme.dart';
 
 class AuthorsSection extends StatelessWidget {
-  const AuthorsSection({super.key});
+  final List<Map<String, dynamic>> authors;
 
-  final List<Map<String, String>> authors = const [
-    {
-      "name": "James Clear",
-      "image": "assets/images/author1.png",
-    },
-    {
-      "name": "Robin Sharma",
-      "image": "assets/images/author2.png",
-    },
-    {
-      "name": "Ryan Holiday",
-      "image": "assets/images/author3.png",
-    },
-    {
-      "name": "Marcus Aurelius",
-      "image": "assets/images/author4.png",
-    },
-  ];
+  const AuthorsSection({super.key, required this.authors});
 
   @override
   Widget build(BuildContext context) {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-
       children: [
-
         Text(
           "Authors For You",
-          style: AppTheme.titleLarge.copyWith(
-            color: Colors.white,
-          ),
+          style: AppTheme.titleLarge.copyWith(color: Colors.white),
         ),
 
         const SizedBox(height: 16),
-
 
         SizedBox(
           height: 120,
@@ -50,52 +26,67 @@ class AuthorsSection extends StatelessWidget {
 
             itemCount: authors.length,
 
-            itemBuilder: (context,index){
+            itemBuilder: (context, index) {
+              final author = authors[index];
 
-              return Container(
-                width: 90,
-
-                margin: const EdgeInsets.only(
-                  right: 18,
-                ),
+              return Padding(
+                padding: const EdgeInsets.only(right: 20),
 
                 child: Column(
                   children: [
+                    Container(
+                      height: 70,
+                      width: 70,
 
-                    CircleAvatar(
-                      radius: 35,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
 
-                      backgroundImage:
-                      AssetImage(
-                        authors[index]["image"]!,
+                        gradient: LinearGradient(
+                          colors: [AppTheme.primary, AppTheme.secondary],
+                        ),
+                      ),
+
+                      child: Center(
+                        child: Text(
+                          author["name"]
+                              .toString()
+                              .substring(0, 1)
+                              .toUpperCase(),
+
+                          style: const TextStyle(
+                            color: Colors.white,
+
+                            fontSize: 28,
+
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
 
+                    const SizedBox(height: 8),
 
-                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: 80,
 
+                      child: Text(
+                        author["name"],
 
-                    Text(
-                      authors[index]["name"]!,
+                        maxLines: 1,
 
-                      maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
 
-                      textAlign: TextAlign.center,
+                        textAlign: TextAlign.center,
 
-                      style:
-                      AppTheme.bodySmall.copyWith(
-                        color: Colors.white,
+                        style: AppTheme.bodySmall.copyWith(color: Colors.white),
                       ),
                     ),
-
                   ],
                 ),
               );
-
             },
           ),
         ),
-
       ],
     );
   }

@@ -1,8 +1,9 @@
 import 'package:go_router/go_router.dart';
+import 'package:mindful/features/navigation/presentation/screens/navigation_screen.dart';
 import 'package:mindful/features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
-import '../../features/home/presentation/screens/home_screen.dart';
+
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -25,7 +26,7 @@ final GoRouter appRouter = GoRouter(
 
     GoRoute(
       path: '/home',
-      builder: (context, state) => HomeScreen(),
+      builder: (context, state) => NavigationScreen(),
     ),
   ],
 );

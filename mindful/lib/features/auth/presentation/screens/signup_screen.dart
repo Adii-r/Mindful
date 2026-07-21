@@ -48,6 +48,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       final authRepository = ref.read(authRepositoryProvider);
 
       await authRepository.signUp(
+        username: usernameController.text.trim(),
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );

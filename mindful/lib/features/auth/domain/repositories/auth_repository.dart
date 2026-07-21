@@ -7,6 +7,7 @@ abstract class AuthRepository {
   });
 
   Future<UserCredential> signUp({
+    required String username,
     required String email,
     required String password,
   });

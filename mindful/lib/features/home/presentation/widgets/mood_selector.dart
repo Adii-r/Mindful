@@ -3,144 +3,94 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class MoodSelector extends StatefulWidget {
-  const MoodSelector({super.key});
+  final Function(String mood) onMoodSelected;
+
+  const MoodSelector({super.key, required this.onMoodSelected});
 
   @override
   State<MoodSelector> createState() => _MoodSelectorState();
 }
 
 class _MoodSelectorState extends State<MoodSelector> {
-
   int selectedIndex = -1;
 
   final moods = [
-    {
-      "emoji": "😊",
-      "name": "Happy",
-    },
-    {
-      "emoji": "😌",
-      "name": "Calm",
-    },
-    {
-      "emoji": "😔",
-      "name": "Sad",
-    },
-    {
-      "emoji": "😤",
-      "name": "Stressed",
-    },
+    {"emoji": "😊", "name": "Happy"},
+    {"emoji": "😌", "name": "Calm"},
+    {"emoji": "😔", "name": "Sad"},
+    {"emoji": "😤", "name": "Stressed"},
   ];
-
 
   @override
   Widget build(BuildContext context) {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
 
       children: [
-
         Text(
           "How are you feeling right now?",
-          style: AppTheme.titleLarge.copyWith(
-            color: Colors.white,
-          ),
+          style: AppTheme.titleLarge.copyWith(color: Colors.white),
         ),
 
         const SizedBox(height: 16),
 
-
         Row(
-          mainAxisAlignment:
-          MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
-          children: List.generate(
-            moods.length,
+          children: List.generate(moods.length, (index) {
+            final selected = selectedIndex == index;
 
-                (index) {
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedIndex = index;
+                });
 
-              final selected =
-                  selectedIndex == index;
+                widget.onMoodSelected(moods[index]["name"]!.toLowerCase());
+              },
 
+              child: Column(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
 
-              return GestureDetector(
+                    width: 60,
+                    height: 60,
 
-                onTap: () {
+                    decoration: BoxDecoration(
+                      color: selected ? AppTheme.secondary : AppTheme.surface,
 
-                  setState(() {
-                    selectedIndex = index;
-                  });
+                      shape: BoxShape.circle,
 
-                },
-
-
-                child: Column(
-                  children: [
-
-                    AnimatedContainer(
-                      duration:
-                      const Duration(
-                        milliseconds: 200,
-                      ),
-
-                      width: 60,
-                      height: 60,
-
-
-                      decoration: BoxDecoration(
-
+                      border: Border.all(
                         color: selected
                             ? AppTheme.secondary
-                            : AppTheme.surface,
-
-
-                        shape: BoxShape.circle,
-
-                        border: Border.all(
-                          color: selected
-                              ? AppTheme.secondary
-                              : Colors.transparent,
-                        ),
-                      ),
-
-
-                      child: Center(
-
-                        child: Text(
-                          moods[index]["emoji"]!,
-                          style: const TextStyle(
-                            fontSize: 28,
-                          ),
-                        ),
-
+                            : Colors.transparent,
                       ),
                     ),
 
-
-                    const SizedBox(height: 8),
-
-
-                    Text(
-                      moods[index]["name"]!,
-
-                      style:
-                      AppTheme.bodySmall.copyWith(
-                        color:
-                        selected
-                            ? Colors.white
-                            : AppTheme.textSecondary,
+                    child: Center(
+                      child: Text(
+                        moods[index]["emoji"]!,
+                        style: const TextStyle(fontSize: 28),
                       ),
                     ),
+                  ),
 
-                  ],
-                ),
-              );
+                  const SizedBox(height: 8),
 
-            },
-          ),
+                  Text(
+                    moods[index]["name"]!,
+
+                    style: AppTheme.bodySmall.copyWith(
+                      color: selected ? Colors.white : AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ),
-
       ],
     );
   }
