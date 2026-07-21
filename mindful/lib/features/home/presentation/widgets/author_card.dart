@@ -1,15 +1,55 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AuthorsSection extends StatelessWidget {
+import '../../../../core/theme/app_theme.dart';
+import '../../../favorites/presentation/providers/favorite_provider.dart';
+
+
+class AuthorsSection extends ConsumerStatefulWidget {
+  const AuthorsSection({super.key, required this.authors});
+
   final List<Map<String, dynamic>> authors;
 
-  const AuthorsSection({super.key, required this.authors});
+  @override
+  ConsumerState<AuthorsSection> createState() => _AuthorsSectionState();
+}
+
+class _AuthorsSectionState extends ConsumerState<AuthorsSection> {
+  Set<String> favoriteAuthors = {};
+
+  @override
+  void initState() {
+    super.initState();
+
+    loadFavorites();
+  }
+
+  Future<void> loadFavorites() async {
+    final favorites = await ref.read(favoriteProvider).getFavorites();
+
+    if (!mounted) return;
+
+    setState(() {
+      favoriteAuthors = favorites
+          .where((fav) => fav.itemType == "author")
+          .map((fav) => fav.itemId)
+          .toSet();
+    });
+  }
+
+  Future<void> toggleAuthor(String id) async {
+    await ref
+        .read(favoriteProvider)
+        .toggleFavorite(itemId: id, itemType: "author");
+
+    loadFavorites();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+
       children: [
         Text(
           "Authors For You",
@@ -24,44 +64,64 @@ class AuthorsSection extends StatelessWidget {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
 
-            itemCount: authors.length,
+            itemCount: widget.authors.length,
 
             itemBuilder: (context, index) {
-              final author = authors[index];
+              final author = widget.authors[index];
+
+              final saved = favoriteAuthors.contains(author["id"]);
 
               return Padding(
                 padding: const EdgeInsets.only(right: 20),
 
                 child: Column(
                   children: [
-                    Container(
-                      height: 70,
-                      width: 70,
+                    Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 35,
 
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
+                          backgroundColor: AppTheme.primary,
 
-                        gradient: LinearGradient(
-                          colors: [AppTheme.primary, AppTheme.secondary],
-                        ),
-                      ),
+                          child: Text(
+                            author["name"].substring(0, 1).toUpperCase(),
 
-                      child: Center(
-                        child: Text(
-                          author["name"]
-                              .toString()
-                              .substring(0, 1)
-                              .toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
 
-                          style: const TextStyle(
-                            color: Colors.white,
+                              fontSize: 28,
 
-                            fontSize: 28,
-
-                            fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
+
+                        Positioned(
+                          right: -2,
+
+                          bottom: -2,
+
+                          child: GestureDetector(
+                            onTap: () {
+                              toggleAuthor(author["id"]);
+                            },
+
+                            child: CircleAvatar(
+                              radius: 13,
+
+                              backgroundColor: AppTheme.surface,
+
+                              child: Icon(
+                                saved ? Icons.favorite : Icons.favorite_border,
+
+                                color: Colors.red,
+
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: 8),

@@ -2,24 +2,22 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
 
-class MoodSelector extends StatefulWidget {
-  final Function(String mood) onMoodSelected;
+class MoodSelector extends StatelessWidget {
+  final List<Map<String, dynamic>> moods;
 
-  const MoodSelector({super.key, required this.onMoodSelected});
+  final String selectedMood;
 
-  @override
-  State<MoodSelector> createState() => _MoodSelectorState();
-}
+  final Function(String moodId) onMoodSelected;
 
-class _MoodSelectorState extends State<MoodSelector> {
-  int selectedIndex = -1;
+  const MoodSelector({
+    super.key,
 
-  final moods = [
-    {"emoji": "😊", "name": "Happy"},
-    {"emoji": "😌", "name": "Calm"},
-    {"emoji": "😔", "name": "Sad"},
-    {"emoji": "😤", "name": "Stressed"},
-  ];
+    required this.moods,
+
+    required this.selectedMood,
+
+    required this.onMoodSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +27,7 @@ class _MoodSelectorState extends State<MoodSelector> {
       children: [
         Text(
           "How are you feeling right now?",
+
           style: AppTheme.titleLarge.copyWith(color: Colors.white),
         ),
 
@@ -37,16 +36,12 @@ class _MoodSelectorState extends State<MoodSelector> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
-          children: List.generate(moods.length, (index) {
-            final selected = selectedIndex == index;
+          children: moods.map((mood) {
+            final isSelected = selectedMood == mood["id"];
 
             return GestureDetector(
               onTap: () {
-                setState(() {
-                  selectedIndex = index;
-                });
-
-                widget.onMoodSelected(moods[index]["name"]!.toLowerCase());
+                onMoodSelected(mood["id"]);
               },
 
               child: Column(
@@ -55,15 +50,16 @@ class _MoodSelectorState extends State<MoodSelector> {
                     duration: const Duration(milliseconds: 200),
 
                     width: 60,
+
                     height: 60,
 
                     decoration: BoxDecoration(
-                      color: selected ? AppTheme.secondary : AppTheme.surface,
+                      color: isSelected ? AppTheme.secondary : AppTheme.surface,
 
                       shape: BoxShape.circle,
 
                       border: Border.all(
-                        color: selected
+                        color: isSelected
                             ? AppTheme.secondary
                             : Colors.transparent,
                       ),
@@ -71,7 +67,8 @@ class _MoodSelectorState extends State<MoodSelector> {
 
                     child: Center(
                       child: Text(
-                        moods[index]["emoji"]!,
+                        mood["emoji"] ?? "🙂",
+
                         style: const TextStyle(fontSize: 28),
                       ),
                     ),
@@ -80,16 +77,16 @@ class _MoodSelectorState extends State<MoodSelector> {
                   const SizedBox(height: 8),
 
                   Text(
-                    moods[index]["name"]!,
+                    mood["name"] ?? "",
 
                     style: AppTheme.bodySmall.copyWith(
-                      color: selected ? Colors.white : AppTheme.textSecondary,
+                      color: isSelected ? Colors.white : AppTheme.textSecondary,
                     ),
                   ),
                 ],
               ),
             );
-          }),
+          }).toList(),
         ),
       ],
     );
