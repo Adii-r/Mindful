@@ -26,6 +26,21 @@ class _HomeScreenState extends State<HomeScreen> {
   String selectedMood = "";
   List<Map<String, dynamic>> recommendedAuthors = [];
   List<Map<String, dynamic>> recommendedBooks = [];
+  List<Map<String, dynamic>> moods = [];
+
+  Future<void> loadMoods() async {
+    final snapshot = await FirebaseDatabase.instance.ref().child("moods").get();
+
+    if (!snapshot.exists) return;
+
+    final data = Map<dynamic, dynamic>.from(snapshot.value as Map);
+
+    setState(() {
+      moods = data.entries.map((e) {
+        return {"id": e.key, ...Map<String, dynamic>.from(e.value)};
+      }).toList();
+    });
+  }
 
   Future<void> loadRecommendedBooks() async {
     final categories = await loadUserCategories();
@@ -51,9 +66,8 @@ class _HomeScreenState extends State<HomeScreen> {
         String authorName = "";
 
         if (authorSnapshot.exists) {
-          final author =
-          Map<String,dynamic>.from(
-              authorSnapshot.value as Map<dynamic,dynamic>
+          final author = Map<String, dynamic>.from(
+            authorSnapshot.value as Map<dynamic, dynamic>,
           );
 
           authorName = author["name"] ?? "";
@@ -120,6 +134,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final db = FirebaseDatabase.instance.ref();
 
+    await loadMoods();
+
     final userSnapshot = await db.child("users").child(uid).get();
 
     if (userSnapshot.exists) {
@@ -178,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .push();
 
     await ref.set({
-      "mood": mood,
+      "moodId": mood,
 
       "loggedAt": DateTime.now().millisecondsSinceEpoch,
     });
@@ -190,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
     loadMoodQuote(mood);
   }
 
-  Future<void> loadMoodQuote(String mood) async {
+  Future<void> loadMoodQuote(String moodId) async {
     final snapshot = await FirebaseDatabase.instance
         .ref()
         .child("quotes")
@@ -203,14 +219,12 @@ class _HomeScreenState extends State<HomeScreen> {
     for (final item in data.entries) {
       final quote = Map<String, dynamic>.from(item.value);
 
-      if (quote["moodTag"].toString().toLowerCase() == mood) {
+      if (quote["moodId"] == moodId) {
         setState(() {
-          selectedQuote = quote;
+          selectedQuote = {"id": item.key, ...quote};
         });
 
-        await loadQuoteAuthor(
-          quote["authorId"],
-        );
+        await loadQuoteAuthor(quote["authorId"]);
 
         break;
       }
@@ -229,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final data = Map<String, dynamic>.from(snapshot.value as Map);
 
     setState(() {
-      selectedAuthor = data;
+      selectedAuthor = {"id": authorId, ...data};
     });
   }
 
@@ -309,7 +323,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               const SizedBox(height: 32),
-              MoodSelector(onMoodSelected: saveMood),
+              MoodSelector(
+                moods: moods,
+                selectedMood: selectedMood,
+                onMoodSelected: saveMood,
+              ),
               const SizedBox(height: 32),
               QuoteCard(quote: selectedQuote, author: selectedAuthor),
               const SizedBox(height: 32),
