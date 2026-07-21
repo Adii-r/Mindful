@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../home/presentation/screens/home_screen.dart';
+
 
 
 class NavigationScreen extends StatefulWidget {
@@ -14,7 +16,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   int currentIndex = 0;
 
   final pages = const [
-    //HomeScreen(),
+    HomeScreen(),
     //ChatScreen(),
     //GameScreen(),
     //FavoritesScreen(),
