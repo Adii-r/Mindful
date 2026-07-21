@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,17 +19,29 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState
     extends ConsumerState<OnboardingScreen> {
   List<CategoryModel> categories = [];
+  List<String> selectedInterests = [];
   bool isLoading = true;
-  final List<String> selectedInterests = [];
 
   Future<void> loadCategories() async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('categories')
+    final snapshot = await FirebaseDatabase.instance
+        .ref()
+        .child('categories')
         .get();
 
-    categories = snapshot.docs
-        .map((doc) => CategoryModel.fromFirestore(doc))
-        .toList();
+    if (!snapshot.exists) {
+      setState(() => isLoading = false);
+      return;
+    }
+
+    final data = Map<String, dynamic>.from(snapshot.value as Map);
+
+    categories = data.entries.map((entry) {
+      return CategoryModel(
+        id: entry.key,
+        name: entry.value['name'],
+        iconUrl: entry.value['iconUrl'],
+      );
+    }).toList();
 
     setState(() {
       isLoading = false;
@@ -45,9 +57,10 @@ class _OnboardingScreenState
   Future<void> continueToHome() async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
-    await FirebaseFirestore.instance
-        .collection('user_preferences')
-        .doc(uid)
+    await FirebaseDatabase.instance
+        .ref()
+        .child('user_preferences')
+        .child(uid)
         .set({
       'categoryIds': selectedInterests,
     });
@@ -57,13 +70,13 @@ class _OnboardingScreenState
     context.go('/home');
   }
 
-  void toggleInterest(String interest) {
+  void toggleInterest(String id) {
     setState(() {
-      if (selectedInterests.contains(interest)) {
-        selectedInterests.remove(interest);
+      if (selectedInterests.contains(id)) {
+        selectedInterests.remove(id);
       } else {
         if (selectedInterests.length < 10) {
-          selectedInterests.add(interest);
+          selectedInterests.add(id);
         }
       }
     });
@@ -128,7 +141,7 @@ class _OnboardingScreenState
                       runSpacing: 12,
                       children: categories.map((category) {
                         return InterestChip(
-                          title: "${category.icon} ${category.name}",
+                          title: "${category.iconUrl} ${category.name}",
                           isSelected: selectedInterests.contains(category.id),
                           onTap: () => toggleInterest(category.id),
                         );
