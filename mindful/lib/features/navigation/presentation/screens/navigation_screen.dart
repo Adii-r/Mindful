@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../chat/presentation/screens/chat_screen.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 
 
@@ -17,7 +18,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
   final pages = const [
     HomeScreen(),
-    //ChatScreen(),
+    ChatScreen(),
     //GameScreen(),
     //FavoritesScreen(),
     //ProfileScreen(),
