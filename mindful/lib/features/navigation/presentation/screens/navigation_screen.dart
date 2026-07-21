@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../chat/presentation/screens/chat_screen.dart';
 import '../../../game/presentation/screens/game_screen.dart';
 import '../../../home/presentation/screens/home_screen.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
 
 
 
@@ -22,7 +23,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     ChatScreen(),
     GameScreen(),
     //FavoritesScreen(),
-    //ProfileScreen(),
+    ProfileScreen(),
   ];
 
   @override
