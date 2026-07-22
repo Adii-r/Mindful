@@ -10,11 +10,9 @@ class AuthRemoteDataSource {
 
     await ref.set({
       "displayName": user.displayName ?? "User",
-
       "email": user.email,
-
       "authProvider": provider,
-
+      "role": "user",
       "createdAt": DateTime.now().millisecondsSinceEpoch,
     });
 
