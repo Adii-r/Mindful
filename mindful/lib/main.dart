@@ -4,10 +4,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/routers/app_router.dart';
 import 'core/theme/app_theme.dart';
 
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: "AIzaSyDjNsjYEc_zgZclpxWYw0q9tZdUTot10ig",
+      authDomain: "mindful-bbabf.firebaseapp.com",
+      databaseURL: "https://mindful-bbabf-default-rtdb.firebaseio.com",
+      projectId: "mindful-bbabf",
+      storageBucket: "mindful-bbabf.firebasestorage.app",
+      messagingSenderId: "776838516130",
+      appId: "1:776838516130:web:bb60b0a44240b6d1b676fb",
+      measurementId: "G-3RDJWHXCFE",
+    ),
+  );
+
   runApp(
     const ProviderScope(
       child: MindfulApp(),
